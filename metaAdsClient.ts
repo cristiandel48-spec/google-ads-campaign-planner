@@ -338,7 +338,7 @@ async function createFullCampaign(params: {
   const hasPixel = pixels.length > 0;
 
   // 3. Create Campaign
-  const objective = hasPixel ? "OUTCOMES" : "TRAFFIC";
+  const objective = hasPixel ? "OUTCOME_SALES" : "OUTCOME_TRAFFIC";
   const campaignData = await graphPost(`/${accountId}/campaigns`, {
     name: params.campaignName,
     objective: objective,
