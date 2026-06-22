@@ -1,0 +1,6 @@
+{
+  "name": "Meta Ads Campaign Planner",
+  "description": "Herramienta interactiva para planificar, estructurar y optimizar campañas de Meta Ads (Facebook e Instagram) enfocadas en dropshipping de salud, belleza y cuidado personal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
