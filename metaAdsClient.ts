@@ -344,6 +344,7 @@ async function createFullCampaign(params: {
     objective: objective,
     buying_type: "AUCTION",
     status: "PAUSED",
+    special_ad_categories: JSON.stringify(["NONE"]),
   });
   const campaignId = campaignData.id;
 
