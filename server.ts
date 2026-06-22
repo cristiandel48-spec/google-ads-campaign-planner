@@ -5,7 +5,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { metaAdsClient } from "./metaAdsClient";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: true });
+dotenv.config({ override: true });
 
 // Initialize Gemini API client lazily to avoid crashing on startup if the key is missing
 let aiClient: GoogleGenAI | null = null;
