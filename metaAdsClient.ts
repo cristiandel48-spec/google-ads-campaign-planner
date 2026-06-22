@@ -353,6 +353,7 @@ async function createFullCampaign(params: {
     buying_type: "AUCTION",
     status: "PAUSED",
     special_ad_categories: JSON.stringify(["NONE"]),
+    is_adset_budget_sharing_enabled: "false",
   });
   const campaignId = campaignData.id;
 
