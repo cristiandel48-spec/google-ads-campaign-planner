@@ -323,6 +323,56 @@ app.post("/api/meta-account/apply-action", async (req, res) => {
   }
 });
 
+// Fetch the user's Facebook Pages
+app.get("/api/meta-account/pages", async (req, res) => {
+  if (!metaAdsClient.isConfigured()) {
+    return res.status(200).json({ configured: false, pages: [] });
+  }
+  try {
+    const pages = await metaAdsClient.fetchPages();
+    res.json({ configured: true, success: true, pages });
+  } catch (error: any) {
+    console.error("Error fetching Facebook pages:", error);
+    res.status(200).json({
+      configured: true,
+      success: false,
+      error: true,
+      message: error?.message || "No se pudieron obtener las páginas de Facebook.",
+    });
+  }
+});
+
+// Create a complete campaign in Meta (paused by default)
+app.post("/api/meta-account/create-campaign", async (req, res) => {
+  if (!metaAdsClient.isConfigured()) {
+    return res.status(400).json({ success: false, message: "La cuenta de Meta Ads no está conectada." });
+  }
+
+  const { pageId, campaignName, dailyBudget, primaryText, headline, imagePath } = req.body;
+
+  if (!pageId || !campaignName || !dailyBudget || !primaryText || !headline || !imagePath) {
+    return res.status(400).json({ success: false, message: "Faltan parámetros obligatorios para la creación de campaña." });
+  }
+
+  try {
+    const result = await metaAdsClient.createFullCampaign({
+      pageId,
+      campaignName,
+      dailyBudget: Number(dailyBudget),
+      primaryText,
+      headline,
+      imagePath,
+    });
+    res.json({ success: true, message: "Campaña creada exitosamente en borrador.", ...result });
+  } catch (error: any) {
+    console.error("Error creating Meta campaign:", error);
+    res.status(200).json({
+      success: false,
+      message: error?.message || "No se pudo crear la campaña en Meta Ads.",
+    });
+  }
+});
+
 // Mock/Static Curated Fallback Data Builders
 
 function getStaticAdsForProduct(product: string, angle: string) {

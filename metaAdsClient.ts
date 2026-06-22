@@ -14,6 +14,9 @@
 //   META_AD_ACCOUNT_ID  — e.g. "act_1234567890" (the "act_" prefix is added
 //                          automatically if you only provide the numeric id)
 
+import fs from "fs";
+import path from "path";
+
 const GRAPH_VERSION = "v21.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
 
@@ -233,9 +236,180 @@ async function applyAction(action: ApplyActionInput): Promise<{ success: boolean
   throw new Error("Acción no soportada.");
 }
 
+async function fetchPages(): Promise<{ id: string; name: string }[]> {
+  const data = await graphGet("/me/accounts", {
+    fields: "id,name",
+    limit: "100",
+  });
+  return (data.data || []).map((p: any) => ({ id: p.id, name: p.name }));
+}
+
+async function fetchPixels(): Promise<string[]> {
+  try {
+    const accountId = getAccountId();
+    const data = await graphGet(`/${accountId}/adspixels`, {
+      fields: "id",
+      limit: "50",
+    });
+    return (data.data || []).map((p: any) => p.id);
+  } catch (e) {
+    console.error("Error fetching pixels:", e);
+    return [];
+  }
+}
+async function uploadAdImage(imagePathOrData: string): Promise<string> {
+  const accountId = getAccountId();
+  let fileBuffer: Buffer;
+  let filename = "image.png";
+  let type = "image/png";
+
+  if (imagePathOrData.startsWith("data:image/")) {
+    const matches = imagePathOrData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      throw new Error("Formato de imagen base64 inválido.");
+    }
+    type = matches[1];
+    fileBuffer = Buffer.from(matches[2], "base64");
+    filename = type === "image/jpeg" ? "image.jpg" : "image.png";
+  } else if (imagePathOrData.startsWith("http://") || imagePathOrData.startsWith("https://")) {
+    const res = await fetch(imagePathOrData);
+    if (!res.ok) throw new Error("No se pudo descargar la imagen desde la URL remota.");
+    const arrayBuffer = await res.arrayBuffer();
+    fileBuffer = Buffer.from(arrayBuffer);
+    const urlPath = new URL(imagePathOrData).pathname;
+    filename = path.basename(urlPath) || "image.png";
+    type = res.headers.get("content-type") || "image/png";
+  } else {
+    let localPath = imagePathOrData;
+    if (imagePathOrData.startsWith("/images/")) {
+      localPath = path.join(process.cwd(), "public", imagePathOrData);
+    } else if (imagePathOrData.startsWith("images/")) {
+      localPath = path.join(process.cwd(), "public", imagePathOrData);
+    }
+    fileBuffer = fs.readFileSync(localPath);
+    const ext = path.extname(localPath).toLowerCase();
+    type = ext === ".png" ? "image/png" : "image/jpeg";
+    filename = path.basename(localPath);
+  }
+
+  const blob = new Blob([fileBuffer], { type });
+  const formData = new FormData();
+  formData.append("filename", blob, filename);
+
+  const url = new URL(`${GRAPH_BASE}/${accountId}/adimages`);
+  url.searchParams.set("access_token", getToken());
+
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await res.json();
+  if (!res.ok || data.error) {
+    throw new Error(data?.error?.message || "Error subiendo la imagen a Meta.");
+  }
+
+  const imageHash = data.images?.[filename]?.hash;
+  if (!imageHash) {
+    const keys = Object.keys(data.images || {});
+    if (keys.length > 0) {
+      return data.images[keys[0]].hash;
+    }
+    throw new Error("No se obtuvo el hash de la imagen.");
+  }
+  return imageHash;
+}
+
+async function createFullCampaign(params: {
+  pageId: string;
+  campaignName: string;
+  dailyBudget: number;
+  primaryText: string;
+  headline: string;
+  imagePath: string;
+}): Promise<{ campaignId: string; adId: string }> {
+  const accountId = getAccountId();
+
+  // 1. Upload the image
+  const imageHash = await uploadAdImage(params.imagePath);
+
+  // 2. Fetch pixels to check if we can optimize for Outcomes (Purchases)
+  const pixels = await fetchPixels();
+  const hasPixel = pixels.length > 0;
+
+  // 3. Create Campaign
+  const objective = hasPixel ? "OUTCOMES" : "TRAFFIC";
+  const campaignData = await graphPost(`/${accountId}/campaigns`, {
+    name: params.campaignName,
+    objective: objective,
+    buying_type: "AUCTION",
+    status: "PAUSED",
+  });
+  const campaignId = campaignData.id;
+
+  // 4. Create Ad Set targeting females, 25-45
+  const adSetBody: Record<string, string> = {
+    name: `Ad Set - ${params.campaignName}`,
+    campaign_id: campaignId,
+    daily_budget: String(Math.round(params.dailyBudget * 100)), // In cents
+    billing_event: "IMPRESSIONS",
+    status: "PAUSED",
+    targeting: JSON.stringify({
+      geo_locations: { countries: ["CO"] }, // Default country
+      age_min: 25,
+      age_max: 45,
+      genders: [2], // 2 = Female
+    }),
+  };
+
+  if (hasPixel) {
+    adSetBody.optimization_goal = "OFFSITE_CONVERSIONS";
+    adSetBody.promoted_object = JSON.stringify({
+      pixel_id: pixels[0],
+      custom_event_type: "PURCHASE",
+    });
+  } else {
+    adSetBody.optimization_goal = "LINK_CLICKS";
+  }
+
+  const adSetData = await graphPost(`/${accountId}/adsets`, { ...adSetBody });
+  const adSetId = adSetData.id;
+
+  // 5. Create Ad Creative
+  const creativeData = await graphPost(`/${accountId}/adcreatives`, {
+    name: `Creative - ${params.campaignName}`,
+    object_story_spec: JSON.stringify({
+      page_id: params.pageId,
+      link_data: {
+        image_hash: imageHash,
+        link: params.imagePath.includes("urofem")
+          ? "https://google-ads-campaign-planner.onrender.com"
+          : "https://google-ads-campaign-planner.onrender.com", // fallback domain
+        message: params.primaryText,
+        name: params.headline,
+        caption: "Envío Gratis + Pago Contra Entrega",
+        call_to_action: { type: "SHOP_NOW" },
+      },
+    }),
+  });
+  const creativeId = creativeData.id;
+
+  // 6. Create Ad
+  const adData = await graphPost(`/${accountId}/ads`, {
+    name: `Anuncio - ${params.campaignName}`,
+    adset_id: adSetId,
+    creative: JSON.stringify({ creative_id: creativeId }),
+    status: "PAUSED",
+  });
+
+  return { campaignId, adId: adData.id };
+}
+
 export const metaAdsClient = {
   isConfigured,
   fetchCampaigns,
   evaluateRules,
   applyAction,
+  fetchPages,
+  createFullCampaign,
 };

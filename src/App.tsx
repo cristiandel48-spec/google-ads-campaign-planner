@@ -196,6 +196,14 @@ export default function App() {
   const [imageSource, setImageSource] = useState<"real" | "ai">("real");
   const [selectedRealImage, setSelectedRealImage] = useState<string>("");
 
+  // Meta Ads campaign creation states
+  const [facebookPages, setFacebookPages] = useState<{ id: string; name: string }[]>([]);
+  const [selectedPageId, setSelectedPageId] = useState<string>("");
+  const [launchingCampaign, setLaunchingCampaign] = useState<boolean>(false);
+  const [launchResult, setLaunchResult] = useState<{ success: boolean; message: string; campaignId?: string } | null>(null);
+  const [customCampaignName, setCustomCampaignName] = useState<string>("");
+
+
 
   // Fetch AI server status and perform initial generation
   useEffect(() => {
@@ -203,6 +211,18 @@ export default function App() {
       .then(res => res.json())
       .then(data => setAiStatus(data))
       .catch(err => console.error("Error fetching AI status:", err));
+
+    fetch("/api/meta-account/pages")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.pages) {
+          setFacebookPages(data.pages);
+          if (data.pages.length > 0) {
+            setSelectedPageId(data.pages[0].id);
+          }
+        }
+      })
+      .catch(err => console.error("Error fetching Facebook pages:", err));
 
     // Initial default generation for default product
     const defaultImg = PRODUCT_IMAGES[PRODUCTS[0].id]?.[0]?.src || "";
@@ -343,6 +363,45 @@ export default function App() {
       setImageError("No se pudo conectar con el servidor para generar la imagen.");
     } finally {
       setImageLoading(false);
+    }
+  };
+
+  const handleLaunchCampaign = async () => {
+    if (!selectedPageId) {
+      alert("Por favor, selecciona una página de Facebook.");
+      return;
+    }
+    setLaunchingCampaign(true);
+    setLaunchResult(null);
+
+    const campaignName = customCampaignName || `${selectedProduct.name} - Campaña IA`;
+    const primaryText = adsData?.primaryTexts?.[0] || "Suplemento premium, pago contra entrega y envío gratis.";
+    const headline = creativeHeadline || adsData?.headlines?.[0] || "Comprar Ahora";
+    
+    const imagePath = imageSource === "ai" && generatedImage 
+      ? generatedImage 
+      : selectedRealImage || PRODUCT_IMAGES[selectedProductId]?.[0]?.src || "";
+
+    try {
+      const response = await fetch("/api/meta-account/create-campaign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pageId: selectedPageId,
+          campaignName,
+          dailyBudget: metrics.dailyBudget,
+          primaryText,
+          headline,
+          imagePath,
+        }),
+      });
+      const data = await response.json();
+      setLaunchResult(data);
+    } catch (e) {
+      console.error("Error launching campaign:", e);
+      setLaunchResult({ success: false, message: "Error al conectar con el servidor." });
+    } finally {
+      setLaunchingCampaign(false);
     }
   };
 
@@ -2120,6 +2179,104 @@ export default function App() {
                     </div>
                   </div>
 
+                </div>
+
+                {/* AUTOMATED CAMPAIGN LAUNCHER PANEL */}
+                <div className="bg-white rounded-2xl border border-rose-100 p-5 space-y-4 shadow-sm text-rose-950 mt-6">
+                  <div className="flex items-center gap-2 border-b border-rose-50 pb-3">
+                    <div className="p-2 bg-[#FFF4F5] rounded-xl text-pink-500">
+                      <Sparkles className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-rose-950">
+                        🚀 Lanzamiento Rápido en Meta Ads (Borrador Seguro)
+                      </h3>
+                      <p className="text-[11px] text-stone-500 mt-0.5">
+                        Crea la campaña estructurada en tu cuenta real de Facebook e Instagram. Se creará en estado <strong>Pausado (Borrador)</strong> para que solo pagues y apruebes al final en el panel oficial de Meta.
+                      </p>
+                    </div>
+                  </div>
+
+                  {facebookPages.length === 0 ? (
+                    <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-xl text-[11px] text-amber-800 leading-relaxed">
+                      ⚠️ <strong>Para lanzar la campaña:</strong> Primero conecta tu cuenta real de Meta Ads agregando tus credenciales en el panel de Render. Si ya lo hiciste, asegúrate de que tu Token de Acceso tenga el permiso de páginas (`pages_show_list` o `pages_read_engagement` si es una cuenta comercial) o usa un Token de Usuario del Explorador que administre tu página de Facebook.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                      <div className="space-y-3.5">
+                        {/* Page selection */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-extrabold text-[#7c5d4b] block">Seleccionar Página de Facebook</label>
+                          <select
+                            value={selectedPageId}
+                            onChange={(e) => setSelectedPageId(e.target.value)}
+                            className="w-full p-2.5 bg-[#FCFAF8] border border-rose-100 rounded-xl text-rose-950 focus:outline-none focus:border-rose-350"
+                          >
+                            {facebookPages.map(page => (
+                              <option key={page.id} value={page.id}>{page.name}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Custom Campaign Name */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-extrabold text-[#7c5d4b] block">Nombre de la Campaña</label>
+                          <input
+                            type="text"
+                            placeholder={`${selectedProduct.name} - Campaña IA`}
+                            value={customCampaignName}
+                            onChange={(e) => setCustomCampaignName(e.target.value)}
+                            className="w-full p-2.5 bg-[#FCFAF8] border border-rose-100 rounded-xl text-rose-950 focus:outline-none focus:border-rose-350"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3.5 flex flex-col justify-between">
+                        {/* Summary of configurations */}
+                        <div className="p-3.5 bg-stone-50 border border-stone-150 rounded-xl space-y-1.5 leading-relaxed text-[11px] text-stone-605">
+                          <div><strong>Presupuesto Diario:</strong> {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(metrics.dailyBudget)} COP</div>
+                          <div><strong>Audiencia recomendada:</strong> Mujeres de 25-45 años en Colombia.</div>
+                          <div><strong>Creativo:</strong> Foto seleccionada de {selectedProduct.name}.</div>
+                          <div><strong>Texto de Anuncio:</strong> {adsData?.primaryTexts?.[0]?.substring(0, 80)}...</div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="space-y-2">
+                          <button
+                            onClick={handleLaunchCampaign}
+                            disabled={launchingCampaign || !selectedPageId}
+                            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 transition-all text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm shadow-emerald-100 disabled:opacity-50"
+                          >
+                            {launchingCampaign ? (
+                              <>
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                Subiendo creativo y creando estructura en Meta...
+                              </>
+                            ) : (
+                              <>
+                                🚀 Lanzar Campaña Borrador en Facebook
+                              </>
+                            )}
+                          </button>
+
+                          {launchResult && (
+                            <div className={`p-3 rounded-xl border text-[11px] leading-relaxed ${launchResult.success ? "bg-emerald-50 border-emerald-250 text-emerald-800" : "bg-rose-50 border-rose-250 text-rose-800"}`}>
+                              {launchResult.success ? (
+                                <div>
+                                  🎉 <strong>¡Éxito!</strong> La campaña se ha creado en estado Pausado. Puedes verla e iniciarla directamente en tu <a href="https://adsmanager.facebook.com/" target="_blank" rel="noreferrer" className="underline font-bold">Administrador de Anuncios de Meta</a>. <br/>
+                                  <span className="font-mono text-[9px] opacity-75">ID de Campaña: {launchResult.campaignId}</span>
+                                </div>
+                              ) : (
+                                <div>
+                                  ❌ <strong>Error:</strong> {launchResult.message}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
               </div>
