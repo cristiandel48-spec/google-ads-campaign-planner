@@ -62,6 +62,21 @@ const PRODUCTS: Product[] = [
   }
 ];
 
+const PRODUCT_IMAGES: Record<string, { src: string; label: string }[]> = {
+  "lemme-burn": [
+    { src: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&q=80&w=700", label: "Estilo Natural" }
+  ],
+  "urofem-gomas": [
+    { src: "/images/urofem_gomas.jpg", label: "Gomitas Urofem" }
+  ],
+  "uro-vaginal": [
+    { src: "/images/uro_floating.png", label: "Cápsulas Flotando" },
+    { src: "/images/uro_table.jpg", label: "Frasco en Mesa" },
+    { src: "/images/uro_diagram.png", label: "Diagrama Cápsula" },
+    { src: "/images/uro_open.jpg", label: "Frasco Abierto" }
+  ]
+};
+
 const INITIAL_OPTIMIZATION_TASKS: OptimizationTask[] = [
   {
     id: "task-1",
@@ -177,6 +192,11 @@ export default function App() {
   // Checklist tasks
   const [tasks, setTasks] = useState<OptimizationTask[]>(INITIAL_OPTIMIZATION_TASKS);
 
+  // Real product images customizer state
+  const [imageSource, setImageSource] = useState<"real" | "ai">("real");
+  const [selectedRealImage, setSelectedRealImage] = useState<string>("");
+
+
   // Fetch AI server status and perform initial generation
   useEffect(() => {
     fetch("/api/ai-status")
@@ -185,6 +205,8 @@ export default function App() {
       .catch(err => console.error("Error fetching AI status:", err));
 
     // Initial default generation for default product
+    const defaultImg = PRODUCT_IMAGES[PRODUCTS[0].id]?.[0]?.src || "";
+    setSelectedRealImage(defaultImg);
     handleGenerate(PRODUCTS[0].id, "direct", targetAudience);
   }, []);
 
@@ -195,6 +217,9 @@ export default function App() {
       setSelectedProductId(id);
       setSelectedProduct(prod);
       
+      const defaultImg = PRODUCT_IMAGES[id]?.[0]?.src || "";
+      setSelectedRealImage(defaultImg);
+
       // Update recommended audience based on product type
       let aud = "Mujeres de 25-45 años interesadas en salud, bienestar, prevención y suplementación premium.";
       if (id === "lemme-burn") {
@@ -1755,8 +1780,46 @@ export default function App() {
                         <span className="text-[10px] text-pink-500 lowercase font-mono font-normal">ajuste en vivo</span>
                       </h3>
 
-                      {/* Aspect Ratio controller */}
+                      {/* Image Source Selection */}
                       <div className="space-y-2">
+                        <label className="text-[11px] font-extrabold text-[#7c5d4b] block">Origen de la Imagen</label>
+                        <div className="grid grid-cols-2 gap-1.5 text-xs font-sans">
+                          <button
+                            onClick={() => setImageSource("real")}
+                            className={`p-2 rounded-xl border transition-all text-center cursor-pointer font-bold ${imageSource === "real" ? "bg-[#FFF4F5] border-pink-300 text-pink-600" : "bg-[#FCFAF8] border-stone-200/50 text-stone-600 hover:text-stone-900"}`}
+                          >
+                            📷 Foto Real
+                          </button>
+                          <button
+                            onClick={() => setImageSource("ai")}
+                            className={`p-2 rounded-xl border transition-all text-center cursor-pointer font-bold ${imageSource === "ai" ? "bg-[#FFF4F5] border-pink-300 text-pink-600" : "bg-[#FCFAF8] border-stone-200/50 text-stone-600 hover:text-stone-900"}`}
+                          >
+                            ✨ Generar con IA
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Real Image Gallery (only shown if real selected) */}
+                      {imageSource === "real" && PRODUCT_IMAGES[selectedProductId] && (
+                        <div className="space-y-2 border-t border-rose-50/50 pt-2">
+                          <label className="text-[11px] font-extrabold text-[#7c5d4b] block">Selecciona Foto del Producto</label>
+                          <div className="flex gap-2 overflow-x-auto pb-1.5">
+                            {PRODUCT_IMAGES[selectedProductId].map((img, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => setSelectedRealImage(img.src)}
+                                className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${selectedRealImage === img.src ? "border-pink-500 scale-95 shadow-md shadow-pink-100" : "border-stone-200 hover:border-pink-350"}`}
+                                title={img.label}
+                              >
+                                <img src={img.src} alt={img.label} className="w-full h-full object-cover" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Aspect Ratio controller */}
+                      <div className="space-y-2 border-t border-rose-50/50 pt-2">
                         <label className="text-[11px] font-extrabold text-[#7c5d4b] block">Formato / Relación de Aspecto</label>
                         <div className="grid grid-cols-3 gap-1.5 text-xs font-sans">
                           <button
@@ -1902,22 +1965,18 @@ export default function App() {
                           {/* Premium Background image: real AI-generated image if available, otherwise a stock placeholder */}
                           <img
                             src={
-                              generatedImage
+                              imageSource === "ai" && generatedImage
                                 ? generatedImage
+                                : imageSource === "real" && selectedRealImage
+                                ? selectedRealImage
                                 : selectedProductId === "lemme-burn"
-                                ? creativeStyle === "cosmetic" ? "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&q=80&w=700"
+                                ? (creativeStyle === "cosmetic" ? "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&q=80&w=700"
                                   : creativeStyle === "organic" ? "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=700"
                                   : creativeStyle === "medical" ? "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&q=80&w=700"
-                                  : "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=700"
+                                  : "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=700")
                                 : selectedProductId === "urofem-gomas"
-                                  ? creativeStyle === "cosmetic" ? "https://images.unsplash.com/photo-1550572018-c2a4ffd532f1?auto=format&fit=crop&q=80&w=700"
-                                    : creativeStyle === "organic" ? "https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?auto=format&fit=crop&q=80&w=700"
-                                    : creativeStyle === "medical" ? "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&q=80&w=700"
-                                    : "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&q=80&w=700"
-                                  : creativeStyle === "cosmetic" ? "https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?auto=format&fit=crop&q=80&w=700"
-                                    : creativeStyle === "organic" ? "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&q=80&w=700"
-                                    : creativeStyle === "medical" ? "https://images.unsplash.com/photo-1579154204601-01588f35116f?auto=format&fit=crop&q=80&w=700"
-                                    : "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=700"
+                                  ? "/images/urofem_gomas.jpg"
+                                  : "/images/uro_floating.png"
                             }
                             alt="Background premium layout"
                             className="absolute inset-0 w-full h-full object-cover brightness-[0.5]"
