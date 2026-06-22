@@ -64,7 +64,7 @@ const PRODUCTS: Product[] = [
 
 const PRODUCT_IMAGES: Record<string, { src: string; label: string }[]> = {
   "lemme-burn": [
-    { src: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&q=80&w=700", label: "Estilo Natural" }
+    { src: "/images/lemme_burn.jpg", label: "Frasco Lemme Burn" }
   ],
   "urofem-gomas": [
     { src: "/images/urofem_gomas.jpg", label: "Gomitas Urofem" }
