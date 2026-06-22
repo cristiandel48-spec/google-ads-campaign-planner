@@ -69,7 +69,11 @@ async function graphGet(path: string, params: Record<string, string>) {
   const res = await fetch(url.toString());
   const data = await res.json();
   if (!res.ok || data.error) {
-    const msg = data?.error?.message || `Error HTTP ${res.status} consultando la API de Meta.`;
+    console.error("Meta API error details (GET):", JSON.stringify(data.error, null, 2));
+    const details = data?.error;
+    const msg = details?.message 
+      ? `${details.message} (Path: ${path}, Type: ${details.type || 'N/A'}, Subcode: ${details.error_subcode || 'N/A'}, Code: ${details.code || 'N/A'})`
+      : `Error HTTP ${res.status} consultando la API de Meta (Path: ${path}).`;
     throw new Error(msg);
   }
   return data;
@@ -85,7 +89,11 @@ async function graphPost(path: string, body: Record<string, string>) {
   });
   const data = await res.json();
   if (!res.ok || data.error) {
-    const msg = data?.error?.message || `Error HTTP ${res.status} aplicando el cambio en Meta.`;
+    console.error("Meta API error details:", JSON.stringify(data.error, null, 2));
+    const details = data?.error;
+    const msg = details?.message 
+      ? `${details.message} (Path: ${path}, Type: ${details.type || 'N/A'}, Subcode: ${details.error_subcode || 'N/A'}, Code: ${details.code || 'N/A'})`
+      : `Error HTTP ${res.status} aplicando el cambio en Meta (Path: ${path}).`;
     throw new Error(msg);
   }
   return data;
