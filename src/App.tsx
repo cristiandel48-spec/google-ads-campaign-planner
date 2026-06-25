@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { Product, AdsStructure, CampaignMetrics, OptimizationTask } from "./types";
 import MetaAdsPanel from "./MetaAdsPanel";
+import AutomationPanel from "./AutomationPanel";
 
 // Predefined Dropshipping Health & Beauty Products
 const PRODUCTS: Product[] = [
@@ -393,6 +394,7 @@ export default function App() {
           primaryText,
           headline,
           imagePath,
+          productId: selectedProductId,
         }),
       });
       const data = await response.json();
@@ -2285,6 +2287,7 @@ export default function App() {
             {/* TAB CONTENT: REAL META ADS ACCOUNT CONNECTION (TRAFICKER MODE) */}
             {activeTab === "ads-account" && (
               <div className="space-y-6 animate-fade-in" id="tab-content-ads-account">
+                <AutomationPanel />
                 <MetaAdsPanel />
               </div>
             )}

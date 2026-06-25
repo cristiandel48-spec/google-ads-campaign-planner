@@ -4,6 +4,9 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { metaAdsClient } from "./metaAdsClient";
+import { mountAutomationRoutes } from "./automation/routes";
+import { runCycle } from "./automation/engine";
+import { loadConfig } from "./automation/config";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: true });
 dotenv.config({ override: true });
@@ -29,6 +32,8 @@ function getGeminiClient(): GoogleGenAI | null {
 
 const app = express();
 app.use(express.json());
+
+mountAutomationRoutes(app);
 
 // API endpoints FIRST
 
@@ -348,11 +353,15 @@ app.post("/api/meta-account/create-campaign", async (req, res) => {
     return res.status(400).json({ success: false, message: "La cuenta de Meta Ads no está conectada." });
   }
 
-  const { pageId, campaignName, dailyBudget, primaryText, headline, imagePath } = req.body;
+  const { pageId, campaignName, dailyBudget, primaryText, headline, imagePath, productId } = req.body;
 
   if (!pageId || !campaignName || !dailyBudget || !primaryText || !headline || !imagePath) {
     return res.status(400).json({ success: false, message: "Faltan parámetros obligatorios para la creación de campaña." });
   }
+
+  // Public URL the ad sends people to: the product landing page (/lp/:productId).
+  const publicSiteUrl = (process.env.PUBLIC_SITE_URL || "https://google-ads-campaign-planner.onrender.com").replace(/\/$/, "");
+  const landingUrl = productId ? `${publicSiteUrl}/lp/${productId}` : publicSiteUrl;
 
   try {
     const result = await metaAdsClient.createFullCampaign({
@@ -362,6 +371,7 @@ app.post("/api/meta-account/create-campaign", async (req, res) => {
       primaryText,
       headline,
       imagePath,
+      landingUrl,
     });
     res.json({ success: true, message: "Campaña creada exitosamente en borrador.", ...result });
   } catch (error: any) {
@@ -579,6 +589,31 @@ async function startServer() {
   app.listen(Number(PORT), "0.0.0.0", () => {
     console.log(`Server is running at http://0.0.0.0:${PORT}`);
   });
+
+  startAutomationLoop();
+}
+
+// Background automation loop. Runs every 4 hours. The cycle itself checks
+// config.mode and returns immediately if mode === "off", so disabling the
+// agent is a one-line config change (or POST /api/automation/kill).
+function startAutomationLoop(): void {
+  const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+  const tick = async () => {
+    try {
+      const cfg = loadConfig();
+      if (cfg.mode === "off") return;
+      const result = await runCycle();
+      console.log(
+        `[automation] cycle ${result.cycleId} mode=${result.mode} evaluated=${result.evaluated} proposed=${result.proposed} executed=${result.executed} skipped=${result.skipped} errors=${result.errors.length}`
+      );
+    } catch (e: any) {
+      console.error("[automation] cycle failed:", e?.message || e);
+    }
+  };
+  // Fire once shortly after boot so the operator gets immediate feedback,
+  // then on the interval.
+  setTimeout(tick, 30_000);
+  setInterval(tick, FOUR_HOURS_MS);
 }
 
 startServer();

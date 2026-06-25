@@ -335,6 +335,7 @@ async function createFullCampaign(params: {
   primaryText: string;
   headline: string;
   imagePath: string;
+  landingUrl?: string;
 }): Promise<{ campaignId: string; adId: string }> {
   const accountId = getAccountId();
 
@@ -392,9 +393,9 @@ async function createFullCampaign(params: {
       page_id: params.pageId,
       link_data: {
         image_hash: imageHash,
-        link: params.imagePath.includes("urofem")
-          ? "https://google-ads-campaign-planner.onrender.com"
-          : "https://google-ads-campaign-planner.onrender.com", // fallback domain
+        // Destination the user lands on after clicking the ad: the product
+        // landing page (/lp/:productId). Falls back to the site root.
+        link: params.landingUrl || "https://google-ads-campaign-planner.onrender.com",
         message: params.primaryText,
         name: params.headline,
         caption: "Envío Gratis + Pago Contra Entrega",
