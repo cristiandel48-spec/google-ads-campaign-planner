@@ -183,7 +183,8 @@ app.post("/api/generate-ads", async (req, res) => {
 
       Importante:
       - Los límites de Meta Ads son estrictos: Texto principal <= 125 caracteres, Títulos <= 40 caracteres, Descripciones <= 30 caracteres. No te pases de ese límite.
-      - Evita afirmaciones médicas exageradas que puedan hacer rechazar el anuncio o suspender la cuenta (no prometas curación de enfermedades, habla de bienestar, balance, nutrición, fórmulas de confianza, cuidado diario).
+      - POLÍTICA DE META (obligatorio para no ser rechazado, en especial en salud íntima/femenina): NUNCA uses palabras que impliquen una condición, diagnóstico, cura o atributo corporal negativo. Quedan PROHIBIDAS: "infección", "infecciones", "cistitis", "candidiasis", "enfermedad", "cura/curar", "tratamiento", "síntomas", "malos olores", "olor", "bacterias hostiles", "picazón", "previene/prevención", "diagnóstico", "médicamente probado", "garantizado", "milagro", "resultados en X días", "sufres", "tu problema".
+      - En su lugar habla SIEMPRE en positivo y como apoyo, no como remedio: "apoya", "contribuye a", "ayuda a mantener", "equilibrio", "bienestar", "frescura", "confianza", "flora sana", "pH saludable", "cuidado diario", "cepas seleccionadas". No prometas resultados ni tiempos.
       - Responde únicamente con el objeto JSON válido. No uses bloques de markdown con la palabrajson, solo imprime el contenido JSON directo.
     `;
 
@@ -547,23 +548,23 @@ function getStaticLandingPageCopy(product: string, angle: string) {
   } else if (isUrofem) {
     return {
       headline: "Protege Tu Zona Íntima de Forma Deliciosa con Urofem",
-      subheadline: "Probióticos activos concentrados en gomitas premium para equilibrar tu flora digestiva, tracto urinario y fortalecer defensas.",
+      subheadline: "Probióticos activos concentrados en gomitas premium para apoyar el equilibrio de tu flora, tu tracto urinario y fortalecer tus defensas.",
       bullets: [
-        "Barrera Urinaria Total: Previene y minimiza el riesgo de infecciones recurrentes.",
-        "Lactobacillus de Alta Supervivencia: Llegan intactos a donde tu cuerpo los necesita.",
-        "Formato en Gomitas Ricas: Fácil de consumir, sin tragar pastillas aburridas.",
-        "Práctico Frasco de 60 Unidades: Bienestar diario a tu alcance inmediato."
+        "Apoya la barrera urinaria y el equilibrio de tu flora femenina.",
+        "Lactobacilos de alta supervivencia: llegan donde tu cuerpo los necesita.",
+        "Formato en gomitas ricas: fácil de consumir, sin tragar pastillas aburridas.",
+        "Práctico frasco de 60 unidades: bienestar diario a tu alcance."
       ]
     };
   } else {
     return {
-      headline: "Recupera la Frescura y Equilibrio Íntimo que Mereces",
-      subheadline: "Probióticos Uro Vaginal de alta potencia científica para restaurar el pH saludable, combatir malos olores y neutralizar bacterias hostiles.",
+      headline: "Recupera la Frescura y el Equilibrio Íntimo que Mereces",
+      subheadline: "Probióticos Uro Vaginal con cepas específicas para apoyar un pH saludable, cuidar tu microbiota y darte confianza día tras día.",
       bullets: [
-        "Optimización del pH Vaginal: Mantiene un ecosistema ácido equilibrado naturalmente.",
-        "Previene Candidiasis y Molestias: Crea una fuerte capa de defensas óptima.",
-        "Fórmula Médicamente Investigada: Enriquecida con cepas de lactobacilos específicos.",
-        "Absorción Rápida e Higiénica: Resultados visibles desde la primera semana de uso."
+        "Apoya el equilibrio del pH vaginal de forma natural.",
+        "Contribuye a una flora íntima sana y a tus defensas naturales.",
+        "Fórmula con cepas de lactobacilos cuidadosamente seleccionadas.",
+        "Absorción rápida e higiénica para tu bienestar diario."
       ]
     };
   }

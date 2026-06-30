@@ -2110,8 +2110,8 @@ export default function App() {
 
                           {/* Extra floating discount tag */}
                           <div className="absolute top-3.5 right-3.5 z-20">
-                            <span className="bg-[#EA5A6F] font-bold font-sans text-white text-[10px] leading-tight h-10 w-10 flex items-center justify-center rounded-full shadow-lg border border-pink-100/50 animate-pulse text-center">
-                              PAGA<br/>CASA
+                            <span className="bg-[#EA5A6F] font-bold font-sans text-white text-[9px] leading-tight h-10 w-10 flex items-center justify-center rounded-full shadow-lg border border-pink-100/50 animate-pulse text-center">
+                              PAGA<br/>EN<br/>CASA
                             </span>
                           </div>
 
