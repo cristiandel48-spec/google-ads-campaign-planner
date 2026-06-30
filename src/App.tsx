@@ -38,7 +38,7 @@ const PRODUCTS: Product[] = [
   {
     id: "lemme-burn",
     name: "LEMME BURN 60 CAPS",
-    supplierCost: 55000, // COP
+    supplierCost: 20500, // COP
     stock: 240,
     suggestedSellPrice: 119900,
     benefit: "Acelerador metabólico y supresor de antojos orgánico premium",
@@ -47,7 +47,7 @@ const PRODUCTS: Product[] = [
   {
     id: "urofem-gomas",
     name: "UROFEM PROBIOTICOS X60UND GOMAS",
-    supplierCost: 48000,
+    supplierCost: 30000,
     stock: 185,
     suggestedSellPrice: 99900,
     benefit: "Prevención urinaria femenina en deliciosas gomas de probióticos",
@@ -56,13 +56,15 @@ const PRODUCTS: Product[] = [
   {
     id: "uro-vaginal",
     name: "Probioticos Uro Vaginal",
-    supplierCost: 45000,
+    supplierCost: 21600,
     stock: 120,
     suggestedSellPrice: 94900,
     benefit: "Restaurador de flora íntima y balance de pH femenino con cepas activas",
     imageAlt: "Probióticos Uro Vaginales"
   }
 ];
+
+const STARTER_META_BUDGET_COP = 20000;
 
 const PRODUCT_IMAGES: Record<string, { src: string; label: string }[]> = {
   "lemme-burn": [
@@ -157,7 +159,7 @@ export default function App() {
   // ROI Calculator Parameters
   const [metrics, setMetrics] = useState<CampaignMetrics>({
     sellingPrice: PRODUCTS[0].suggestedSellPrice,
-    dailyBudget: 40000, // COP/day default
+    dailyBudget: STARTER_META_BUDGET_COP, // COP/day protected starter budget
     cpc: 450, // Average COP per click for health/beauty in LatAm google ads
     conversionRate: 2.2 // percent
   });
@@ -391,7 +393,7 @@ export default function App() {
         body: JSON.stringify({
           pageId: selectedPageId,
           campaignName,
-          dailyBudget: metrics.dailyBudget,
+          dailyBudget: Math.min(metrics.dailyBudget, STARTER_META_BUDGET_COP),
           primaryText,
           headline,
           imagePath,
@@ -1640,15 +1642,15 @@ export default function App() {
                       </div>
                       <input 
                         type="range" 
-                        min={15000} 
-                        max={150000} 
+                        min={5000} 
+                        max={STARTER_META_BUDGET_COP} 
                         step={5000}
                         value={metrics.dailyBudget} 
-                        onChange={(e) => setMetrics({ ...metrics, dailyBudget: parseInt(e.target.value) })}
+                        onChange={(e) => setMetrics({ ...metrics, dailyBudget: Math.min(parseInt(e.target.value), STARTER_META_BUDGET_COP) })}
                         className="w-full accent-pink-500 h-1 bg-[#FAF6F3] rounded-lg cursor-pointer"
                         id="slider-dailybudget"
                       />
-                      <span className="text-[10px] text-stone-450 block">Presupuesto diario aconsejado para iniciar la primera fase escolar (Maximizar Clics).</span>
+                      <span className="text-[10px] text-stone-450 block">Tope protegido para esta recarga: {formatCurrency(STARTER_META_BUDGET_COP)}. La app no enviará a Meta un presupuesto mayor.</span>
                     </div>
 
                     {/* Input: Est. Average CPC (Cost per Click) */}
@@ -2250,6 +2252,7 @@ export default function App() {
                         {/* Summary of configurations */}
                         <div className="p-3.5 bg-stone-50 border border-stone-150 rounded-xl space-y-1.5 leading-relaxed text-[11px] text-stone-605">
                           <div><strong>Presupuesto Diario:</strong> {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(metrics.dailyBudget)} COP</div>
+                          <div><strong>Tope de recarga:</strong> {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(STARTER_META_BUDGET_COP)} COP</div>
                           <div><strong>Audiencia recomendada:</strong> Mujeres de 25-45 años en Colombia.</div>
                           <div><strong>Creativo:</strong> Foto seleccionada de {selectedProduct.name}.</div>
                           <div><strong>Texto de Anuncio:</strong> {adsData?.primaryTexts?.[0]?.substring(0, 80)}...</div>

@@ -37,11 +37,11 @@ export interface AutomationConfig {
 
 const DEFAULTS: AutomationConfig = {
   mode: "shadow",
-  dailySpendCapAccount: 500_000, // 500k COP/day total
-  maxBudgetIncreasePct: 20,
-  minSpendForDecision: 30_000, // 30k COP minimum spend before acting
-  maxActionsPerCycle: 5,
-  autoExecuteRules: ["pause", "increase_budget"], // live mode can pause losers and scale winners inside caps
+  dailySpendCapAccount: 20_000, // 20k COP/day total while validating the first campaign
+  maxBudgetIncreasePct: 0,
+  minSpendForDecision: 5_000,
+  maxActionsPerCycle: 2,
+  autoExecuteRules: ["pause", "decrease_budget"], // starter mode protects spend; scaling stays manual
 };
 
 const DATA_DIR = path.join(process.cwd(), "data");

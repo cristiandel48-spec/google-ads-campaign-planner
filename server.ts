@@ -32,6 +32,7 @@ function getGeminiClient(): GoogleGenAI | null {
 }
 
 const app = express();
+const STARTER_META_BUDGET_COP = Number(process.env.META_MAX_DAILY_BUDGET_COP || process.env.META_CAMPAIGN_SPEND_CAP_COP || 20000);
 app.use(express.json());
 
 mountAutomationRoutes(app);
@@ -369,7 +370,7 @@ app.post("/api/meta-account/create-campaign", async (req, res) => {
     const result = await metaAdsClient.createFullCampaign({
       pageId,
       campaignName,
-      dailyBudget: Number(dailyBudget),
+      dailyBudget: Math.min(Number(dailyBudget), STARTER_META_BUDGET_COP),
       primaryText,
       headline,
       imagePath,

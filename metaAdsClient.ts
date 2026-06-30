@@ -19,6 +19,7 @@ import path from "path";
 
 const GRAPH_VERSION = "v21.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
+const DEFAULT_STARTER_SPEND_CAP_COP = 20_000;
 
 export interface MetaCampaignMetric {
   id: string;
@@ -61,6 +62,23 @@ function getAccountId(): string {
 
 function getToken(): string {
   return process.env.META_ACCESS_TOKEN as string;
+}
+
+function numberEnv(name: string, fallback: number): number {
+  const raw = Number(process.env[name]);
+  return Number.isFinite(raw) && raw > 0 ? raw : fallback;
+}
+
+function getCampaignSpendCap(): number {
+  return numberEnv("META_CAMPAIGN_SPEND_CAP_COP", DEFAULT_STARTER_SPEND_CAP_COP);
+}
+
+function getMaxDailyBudget(): number {
+  return numberEnv("META_MAX_DAILY_BUDGET_COP", getCampaignSpendCap());
+}
+
+function toMetaMoney(amount: number): string {
+  return String(Math.round(amount * 100));
 }
 
 function formatMetaError(details: any, path: string, fallback: string): string {
@@ -193,6 +211,7 @@ async function fetchCampaigns(): Promise<MetaCampaignMetric[]> {
 // matter for Meta/Facebook/Instagram campaigns (frequency, CTR, CPM, results).
 function evaluateRules(campaigns: MetaCampaignMetric[]): MetaAdsSuggestion[] {
   const suggestions: MetaAdsSuggestion[] = [];
+  const maxDailyBudget = getMaxDailyBudget();
 
   for (const c of campaigns) {
     if (c.status !== "ACTIVE") continue;
@@ -250,7 +269,8 @@ function evaluateRules(campaigns: MetaCampaignMetric[]): MetaAdsSuggestion[] {
     }
 
     // Rule 5: profitable ROAS -> scale budget +20%
-    if (c.roas > 3 && c.results >= 3 && c.dailyBudget > 0) {
+    if (c.roas > 3 && c.results >= 3 && c.dailyBudget > 0 && c.dailyBudget < maxDailyBudget) {
+      const suggestedDailyBudget = Math.min(Math.round(c.dailyBudget * 1.2), maxDailyBudget);
       suggestions.push({
         id: `${c.id}-scale`,
         campaignId: c.id,
@@ -259,7 +279,7 @@ function evaluateRules(campaigns: MetaCampaignMetric[]): MetaAdsSuggestion[] {
         severity: "opportunity",
         reason: `ROAS de ${c.roas.toFixed(2)}x con ${c.results} resultados. Candidata a escalar presupuesto diario +20% dentro del cap.`,
         spendAffecting: true,
-        suggestedDailyBudget: Math.round(c.dailyBudget * 1.2),
+        suggestedDailyBudget,
       });
     }
   }
@@ -281,8 +301,9 @@ async function applyAction(action: ApplyActionInput): Promise<{ success: boolean
   }
 
   if (action.type === "set_budget") {
+    const safeDailyBudget = Math.min(action.dailyBudget, getMaxDailyBudget());
     await graphPost(`/${action.campaignId}`, {
-      daily_budget: String(Math.round(action.dailyBudget * 100)), // Meta expects budgets in cents
+      daily_budget: toMetaMoney(safeDailyBudget), // Meta expects budgets in cents
     });
     return { success: true, message: "Presupuesto diario actualizado." };
   }
@@ -394,6 +415,8 @@ async function createFullCampaign(params: {
   const accountId = getAccountId();
   const landingUrl = params.landingUrl || "https://google-ads-campaign-planner.onrender.com";
   const landingHost = new URL(landingUrl).hostname;
+  const campaignSpendCap = getCampaignSpendCap();
+  const safeDailyBudget = Math.min(params.dailyBudget, getMaxDailyBudget(), campaignSpendCap);
 
   // 1. Upload the image
   const imageHash = await uploadAdImage(params.imagePath);
@@ -411,6 +434,7 @@ async function createFullCampaign(params: {
     status: "PAUSED",
     special_ad_categories: JSON.stringify(["NONE"]),
     is_adset_budget_sharing_enabled: "false",
+    spend_cap: toMetaMoney(campaignSpendCap),
   });
   const campaignId = campaignData.id;
 
@@ -418,7 +442,7 @@ async function createFullCampaign(params: {
   const adSetBody: Record<string, string> = {
     name: `Ad Set - ${params.campaignName}`,
     campaign_id: campaignId,
-    daily_budget: String(Math.round(params.dailyBudget * 100)), // In cents
+    daily_budget: toMetaMoney(safeDailyBudget), // In cents
     billing_event: "IMPRESSIONS",
     bid_strategy: "LOWEST_COST_WITHOUT_CAP",
     status: "PAUSED",
