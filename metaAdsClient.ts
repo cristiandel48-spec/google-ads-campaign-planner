@@ -63,6 +63,17 @@ function getToken(): string {
   return process.env.META_ACCESS_TOKEN as string;
 }
 
+function formatMetaError(details: any, path: string, fallback: string): string {
+  const userFacing = [details?.error_user_title, details?.error_user_msg]
+    .filter(Boolean)
+    .join(": ");
+  const base = userFacing || details?.message;
+
+  return base
+    ? `${base} (Path: ${path}, Type: ${details?.type || "N/A"}, Subcode: ${details?.error_subcode || "N/A"}, Code: ${details?.code || "N/A"})`
+    : fallback;
+}
+
 async function graphGet(path: string, params: Record<string, string>) {
   const url = new URL(`${GRAPH_BASE}${path}`);
   url.searchParams.set("access_token", getToken());
@@ -73,10 +84,7 @@ async function graphGet(path: string, params: Record<string, string>) {
   if (!res.ok || data.error) {
     console.error("Meta API error details (GET):", JSON.stringify(data.error, null, 2));
     const details = data?.error;
-    const msg = details?.message 
-      ? `${details.message} (Path: ${path}, Type: ${details.type || 'N/A'}, Subcode: ${details.error_subcode || 'N/A'}, Code: ${details.code || 'N/A'})`
-      : `Error HTTP ${res.status} consultando la API de Meta (Path: ${path}).`;
-    throw new Error(msg);
+    throw new Error(formatMetaError(details, path, `Error HTTP ${res.status} consultando la API de Meta (Path: ${path}).`));
   }
   return data;
 }
@@ -93,10 +101,7 @@ async function graphPost(path: string, body: Record<string, string>) {
   if (!res.ok || data.error) {
     console.error("Meta API error details:", JSON.stringify(data.error, null, 2));
     const details = data?.error;
-    const msg = details?.message 
-      ? `${details.message} (Path: ${path}, Type: ${details.type || 'N/A'}, Subcode: ${details.error_subcode || 'N/A'}, Code: ${details.code || 'N/A'})`
-      : `Error HTTP ${res.status} aplicando el cambio en Meta (Path: ${path}).`;
-    throw new Error(msg);
+    throw new Error(formatMetaError(details, path, `Error HTTP ${res.status} aplicando el cambio en Meta (Path: ${path}).`));
   }
   return data;
 }
@@ -286,6 +291,9 @@ async function applyAction(action: ApplyActionInput): Promise<{ success: boolean
 }
 
 async function fetchPages(): Promise<{ id: string; name: string }[]> {
+  const manualPageId = process.env.META_PAGE_ID?.trim();
+  const manualPageName = process.env.META_PAGE_NAME?.trim() || "Página configurada manualmente";
+
   const data = await graphGet("/me/accounts", {
     fields: "id,name",
     limit: "100",
@@ -293,10 +301,9 @@ async function fetchPages(): Promise<{ id: string; name: string }[]> {
   const pages = (data.data || []).map((p: any) => ({ id: p.id, name: p.name }));
   if (pages.length > 0) return pages;
 
-  // Some Graph Explorer tokens are generated directly as a Page identity.
-  // In that case /me/accounts is empty, but /me is the usable Page.
-  const me = await graphGet("/me", { fields: "id,name" });
-  return me?.id && me?.name ? [{ id: me.id, name: me.name }] : [];
+  // If Graph Explorer cannot list managed pages, allow an explicit Page ID.
+  // Do not fall back to /me: user/business IDs are not valid in object_story_spec.
+  return manualPageId ? [{ id: manualPageId, name: manualPageName }] : [];
 }
 
 async function fetchPixels(): Promise<string[]> {
@@ -385,6 +392,8 @@ async function createFullCampaign(params: {
   landingUrl?: string;
 }): Promise<{ campaignId: string; adId: string }> {
   const accountId = getAccountId();
+  const landingUrl = params.landingUrl || "https://google-ads-campaign-planner.onrender.com";
+  const landingHost = new URL(landingUrl).hostname;
 
   // 1. Upload the image
   const imageHash = await uploadAdImage(params.imagePath);
@@ -411,12 +420,14 @@ async function createFullCampaign(params: {
     campaign_id: campaignId,
     daily_budget: String(Math.round(params.dailyBudget * 100)), // In cents
     billing_event: "IMPRESSIONS",
+    bid_strategy: "LOWEST_COST_WITHOUT_CAP",
     status: "PAUSED",
     targeting: JSON.stringify({
       geo_locations: { countries: ["CO"] }, // Default country
       age_min: 25,
       age_max: 45,
       genders: [2], // 2 = Female
+      targeting_automation: { advantage_audience: 0 },
     }),
   };
 
@@ -442,11 +453,14 @@ async function createFullCampaign(params: {
         image_hash: imageHash,
         // Destination the user lands on after clicking the ad: the product
         // landing page (/lp/:productId). Falls back to the site root.
-        link: params.landingUrl || "https://google-ads-campaign-planner.onrender.com",
+        link: landingUrl,
         message: params.primaryText,
         name: params.headline,
-        caption: "Envío Gratis + Pago Contra Entrega",
-        call_to_action: { type: "SHOP_NOW" },
+        caption: landingHost,
+        call_to_action: {
+          type: "SHOP_NOW",
+          value: { link: landingUrl },
+        },
       },
     }),
   });
