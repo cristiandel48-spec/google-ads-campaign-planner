@@ -41,7 +41,7 @@ const DEFAULTS: AutomationConfig = {
   maxBudgetIncreasePct: 20,
   minSpendForDecision: 30_000, // 30k COP minimum spend before acting
   maxActionsPerCycle: 5,
-  autoExecuteRules: ["pause"], // start conservative: only auto-pause
+  autoExecuteRules: ["pause", "increase_budget"], // live mode can pause losers and scale winners inside caps
 };
 
 const DATA_DIR = path.join(process.cwd(), "data");

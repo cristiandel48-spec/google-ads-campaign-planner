@@ -213,6 +213,8 @@ export default function MetaAdsPanel() {
                 <th className="py-2 pr-3 font-bold">Frecuencia</th>
                 <th className="py-2 pr-3 font-bold">CTR</th>
                 <th className="py-2 pr-3 font-bold">Gasto</th>
+                <th className="py-2 pr-3 font-bold">Ingresos</th>
+                <th className="py-2 pr-3 font-bold">ROAS</th>
                 <th className="py-2 pr-3 font-bold">Resultados</th>
               </tr>
             </thead>
@@ -230,6 +232,8 @@ export default function MetaAdsPanel() {
                   <td className="py-2 pr-3">{c.frequency.toFixed(2)}x</td>
                   <td className="py-2 pr-3">{c.ctr.toFixed(2)}%</td>
                   <td className="py-2 pr-3">{formatCOP(c.spend)}</td>
+                  <td className="py-2 pr-3">{formatCOP(c.purchaseValue)}</td>
+                  <td className="py-2 pr-3 font-bold text-pink-600">{c.roas.toFixed(2)}x</td>
                   <td className="py-2 pr-3">{c.results}</td>
                 </tr>
               ))}

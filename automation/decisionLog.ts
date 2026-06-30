@@ -33,6 +33,8 @@ export interface DecisionRecord {
     ctr: number;
     frequency: number;
     dailyBudget: number;
+    purchaseValue: number;
+    roas: number;
   };
 }
 

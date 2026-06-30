@@ -26,7 +26,7 @@ import {
  *    el enlace de checkout/producto que te da Mastershop.
  *    Mientras esté vacío (""), el botón "Comprar" usará WhatsApp como respaldo.
  * ============================================================ */
-const WHATSAPP_NUMBER = "57XXXXXXXXXX"; // <-- PON TU NÚMERO AQUÍ
+const WHATSAPP_NUMBER = "573044901787"; // <-- PON TU NÚMERO AQUÍ
 const BRAND_NAME = "Tienda Bienestar";
 
 interface LandingProduct {

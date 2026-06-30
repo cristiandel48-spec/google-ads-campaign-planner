@@ -37,6 +37,8 @@ function snapshot(c: MetaCampaignMetric): DecisionRecord["metricsSnapshot"] {
     ctr: c.ctr,
     frequency: c.frequency,
     dailyBudget: c.dailyBudget,
+    purchaseValue: c.purchaseValue,
+    roas: c.roas,
   };
 }
 

@@ -52,3 +52,14 @@ Para conectarla necesitas 2 valores obligatorios en tus Secrets/`.env.local`
 
 Mientras estos valores no estén configurados, la pestaña "Cuenta Meta Ads" se
 queda en modo informativo y no intenta conectarse a ninguna cuenta real.
+
+## Agente omnichannel Meta + Mastershop + WhatsApp
+
+La app ahora incluye un centro omnicanal para operar el flujo completo: Meta Ads -> landing -> checkout -> Mastershop -> WhatsApp -> reporte diario.
+
+- **Meta Ads**: lee campañas reales, calcula ingresos atribuidos y ROAS, pausa campañas con ROAS menor a 1.5x y escala ganadoras con ROAS mayor a 3x solo si el modo LIVE y los caps lo permiten.
+- **Mastershop**: recibe eventos de pedido en POST /api/mastershop/webhook y puede leer reportes diarios desde el endpoint configurado en MASTERSHOP_REPORTS_PATH.
+- **WhatsApp Business**: responde consultas frecuentes en POST /api/whatsapp/webhook, envía confirmaciones de pedido y dispara alertas si hay métricas fuera de rango.
+- **Reportes**: POST /api/omnichannel/report/run genera un consolidado con ingresos, gasto, pedidos, clientes nuevos/recurrentes, CPM, CPC, conversión y ROAS. El loop de fondo genera un reporte por día.
+
+Sin credenciales, el sistema no falla: opera en modo local, registra eventos y deja WhatsApp en outbox. Para operación real, completa las variables MASTERSHOP_*, WHATSAPP_*, META_* y GEMINI_API_KEY en Secrets o .env.local.

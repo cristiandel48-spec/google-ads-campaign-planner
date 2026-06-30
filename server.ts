@@ -5,6 +5,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { metaAdsClient } from "./metaAdsClient";
 import { mountAutomationRoutes } from "./automation/routes";
+import { mountOmnichannelRoutes, maybeRunDailyReport } from "./automation/omnichannel";
 import { runCycle } from "./automation/engine";
 import { loadConfig } from "./automation/config";
 
@@ -34,6 +35,7 @@ const app = express();
 app.use(express.json());
 
 mountAutomationRoutes(app);
+mountOmnichannelRoutes(app);
 
 // API endpoints FIRST
 
@@ -606,6 +608,10 @@ function startAutomationLoop(): void {
       console.log(
         `[automation] cycle ${result.cycleId} mode=${result.mode} evaluated=${result.evaluated} proposed=${result.proposed} executed=${result.executed} skipped=${result.skipped} errors=${result.errors.length}`
       );
+      const report = await maybeRunDailyReport();
+      if (report) {
+        console.log(`[omnichannel] daily report ${report.id} date=${report.date} roas=${report.consolidated.roas} alerts=${report.alerts.length}`);
+      }
     } catch (e: any) {
       console.error("[automation] cycle failed:", e?.message || e);
     }

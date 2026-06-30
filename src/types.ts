@@ -55,6 +55,8 @@ export interface MetaCampaignMetric {
   cpm: number;
   results: number; // conversions / leads / purchases depending on objective
   costPerResult: number;
+  purchaseValue: number;
+  roas: number;
 }
 
 export interface MetaAdsSuggestion {

@@ -31,6 +31,7 @@ import {
 import { Product, AdsStructure, CampaignMetrics, OptimizationTask } from "./types";
 import MetaAdsPanel from "./MetaAdsPanel";
 import AutomationPanel from "./AutomationPanel";
+import OmnichannelPanel from "./OmnichannelPanel";
 
 // Predefined Dropshipping Health & Beauty Products
 const PRODUCTS: Product[] = [
@@ -174,7 +175,7 @@ export default function App() {
   const [devicePreview, setDevicePreview] = useState<"mobile" | "desktop">("mobile");
 
   // Active Tab Manager
-  const [activeTab, setActiveTab] = useState<"ads" | "keywords" | "landing" | "roi" | "timeline" | "creatives" | "ads-account">("ads");
+  const [activeTab, setActiveTab] = useState<"ads" | "keywords" | "landing" | "roi" | "timeline" | "creatives" | "omnichannel" | "ads-account">("ads");
 
   // Visual Image & Banner Customizer States
   const [creativeStyle, setCreativeStyle] = useState<"cosmetic" | "organic" | "medical" | "gold">("cosmetic");
@@ -829,6 +830,18 @@ export default function App() {
               >
                 <Image className="w-4 h-4 text-pink-500 animate-pulse" />
                 Imágenes y Banners
+              </button>
+              <button
+                onClick={() => setActiveTab("omnichannel")}
+                className={`flex-1 py-2 px-3 text-xs md:text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  activeTab === "omnichannel"
+                    ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold shadow-sm shadow-pink-100"
+                    : "text-rose-950/60 hover:text-rose-950 hover:bg-rose-50/50"
+                }`}
+                id="tab-omnichannel-btn"
+              >
+                <Shield className="w-4 h-4" />
+                Omnicanal
               </button>
               <button
                 onClick={() => setActiveTab("ads-account")}
@@ -2281,6 +2294,13 @@ export default function App() {
                   )}
                 </div>
 
+              </div>
+            )}
+
+            {/* TAB CONTENT: OMNICHANNEL OPERATIONS */}
+            {activeTab === "omnichannel" && (
+              <div className="space-y-6 animate-fade-in" id="tab-content-omnichannel">
+                <OmnichannelPanel />
               </div>
             )}
 

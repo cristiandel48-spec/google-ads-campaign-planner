@@ -35,6 +35,8 @@ export interface MetaCampaignMetric {
   cpm: number;
   results: number;
   costPerResult: number;
+  purchaseValue: number;
+  roas: number;
 }
 
 export interface MetaAdsSuggestion {
@@ -99,6 +101,30 @@ async function graphPost(path: string, body: Record<string, string>) {
   return data;
 }
 
+const PURCHASE_ACTION_TYPES = [
+  "purchase",
+  "omni_purchase",
+  "onsite_conversion.purchase",
+  "offsite_conversion.fb_pixel_purchase",
+];
+
+const RESULT_ACTION_TYPES = [
+  ...PURCHASE_ACTION_TYPES,
+  "lead",
+  "onsite_conversion.lead_grouped",
+  "offsite_conversion.fb_pixel_lead",
+];
+
+function findActionValue(entries: any[] | undefined, actionTypes: string[]): number {
+  const entry = (entries || []).find((a: any) => actionTypes.includes(a.action_type));
+  return entry ? Number(entry.value || 0) : 0;
+}
+
+function computeRoas(spend: number, purchaseValue: number): number {
+  if (spend <= 0 || purchaseValue <= 0) return 0;
+  return Number((purchaseValue / spend).toFixed(2));
+}
+
 // Fetch campaigns + last 7 day insights
 async function fetchCampaigns(): Promise<MetaCampaignMetric[]> {
   const accountId = getAccountId();
@@ -116,7 +142,7 @@ async function fetchCampaigns(): Promise<MetaCampaignMetric[]> {
     let insight: any = {};
     try {
       const insightsData = await graphGet(`/${c.id}/insights`, {
-        fields: "spend,reach,impressions,frequency,clicks,ctr,cpm,actions,cost_per_action_type",
+        fields: "spend,reach,impressions,frequency,clicks,ctr,cpm,actions,action_values,cost_per_action_type,purchase_roas",
         date_preset: "last_7d",
       });
       insight = insightsData.data?.[0] || {};
@@ -124,15 +150,15 @@ async function fetchCampaigns(): Promise<MetaCampaignMetric[]> {
       insight = {};
     }
 
-    // "results" = sum of purchase / lead / on-facebook-lead actions, falling
-    // back to link clicks if no conversion action is configured yet.
-    const conversionAction = (insight.actions || []).find((a: any) =>
-      ["purchase", "lead", "onsite_conversion.purchase", "offsite_conversion.fb_pixel_purchase"].includes(a.action_type)
-    );
-    const resultsCount = conversionAction ? Number(conversionAction.value) : 0;
+    // "results" = purchase/lead actions; ROAS uses attributed purchase value when Meta returns it.
+    const resultsCount = findActionValue(insight.actions, RESULT_ACTION_TYPES);
+    const purchaseValue = findActionValue(insight.action_values, PURCHASE_ACTION_TYPES);
+    const purchaseRoas = Number(insight.purchase_roas?.[0]?.value || 0);
+    const spend = Number(insight.spend || 0);
+    const roas = purchaseRoas > 0 ? Number(purchaseRoas.toFixed(2)) : computeRoas(spend, purchaseValue);
 
     const costPerResultEntry = (insight.cost_per_action_type || []).find((a: any) =>
-      ["purchase", "lead", "onsite_conversion.purchase", "offsite_conversion.fb_pixel_purchase"].includes(a.action_type)
+      RESULT_ACTION_TYPES.includes(a.action_type)
     );
 
     results.push({
@@ -141,7 +167,7 @@ async function fetchCampaigns(): Promise<MetaCampaignMetric[]> {
       status: c.status,
       objective: c.objective || "N/A",
       dailyBudget: c.daily_budget ? Number(c.daily_budget) / 100 : 0,
-      spend: Number(insight.spend || 0),
+      spend,
       reach: Number(insight.reach || 0),
       impressions: Number(insight.impressions || 0),
       frequency: Number(insight.frequency || 0),
@@ -150,6 +176,8 @@ async function fetchCampaigns(): Promise<MetaCampaignMetric[]> {
       cpm: Number(insight.cpm || 0),
       results: resultsCount,
       costPerResult: costPerResultEntry ? Number(costPerResultEntry.value) : 0,
+      purchaseValue,
+      roas,
     });
   }
 
@@ -177,7 +205,20 @@ function evaluateRules(campaigns: MetaCampaignMetric[]): MetaAdsSuggestion[] {
       });
     }
 
-    // Rule 2: ad fatigue — frequency too high erodes CTR and raises CPM
+    // Rule 2: ROAS below target -> pause/reoptimize. Requires revenue data.
+    if (c.spend > 50000 && c.roas > 0 && c.roas < 1.5) {
+      suggestions.push({
+        id: `${c.id}-pause-lowroas`,
+        campaignId: c.id,
+        campaignName: c.name,
+        type: "pause",
+        severity: "critical",
+        reason: `ROAS de ${c.roas.toFixed(2)}x por debajo del mínimo 1.5x. Pausar o reoptimizar antes de seguir consumiendo presupuesto.`,
+        spendAffecting: true,
+      });
+    }
+
+    // Rule 3: ad fatigue — frequency too high erodes CTR and raises CPM
     if (c.frequency > 3.5) {
       suggestions.push({
         id: `${c.id}-fatigue`,
@@ -190,7 +231,7 @@ function evaluateRules(campaigns: MetaCampaignMetric[]): MetaAdsSuggestion[] {
       });
     }
 
-    // Rule 3: low CTR -> creative or targeting issue
+    // Rule 4: low CTR -> creative or targeting issue
     if (c.impressions > 1000 && c.ctr < 1.0) {
       suggestions.push({
         id: `${c.id}-lowctr`,
@@ -203,15 +244,15 @@ function evaluateRules(campaigns: MetaCampaignMetric[]): MetaAdsSuggestion[] {
       });
     }
 
-    // Rule 4: healthy results and controlled cost -> scale budget +20%
-    if (c.results >= 5 && c.dailyBudget > 0) {
+    // Rule 5: profitable ROAS -> scale budget +20%
+    if (c.roas > 3 && c.results >= 3 && c.dailyBudget > 0) {
       suggestions.push({
         id: `${c.id}-scale`,
         campaignId: c.id,
         campaignName: c.name,
         type: "increase_budget",
         severity: "opportunity",
-        reason: `${c.results} resultados en 7 días con costo controlado. Candidata a escalar presupuesto diario +20%.`,
+        reason: `ROAS de ${c.roas.toFixed(2)}x con ${c.results} resultados. Candidata a escalar presupuesto diario +20% dentro del cap.`,
         spendAffecting: true,
         suggestedDailyBudget: Math.round(c.dailyBudget * 1.2),
       });
@@ -249,7 +290,13 @@ async function fetchPages(): Promise<{ id: string; name: string }[]> {
     fields: "id,name",
     limit: "100",
   });
-  return (data.data || []).map((p: any) => ({ id: p.id, name: p.name }));
+  const pages = (data.data || []).map((p: any) => ({ id: p.id, name: p.name }));
+  if (pages.length > 0) return pages;
+
+  // Some Graph Explorer tokens are generated directly as a Page identity.
+  // In that case /me/accounts is empty, but /me is the usable Page.
+  const me = await graphGet("/me", { fields: "id,name" });
+  return me?.id && me?.name ? [{ id: me.id, name: me.name }] : [];
 }
 
 async function fetchPixels(): Promise<string[]> {
