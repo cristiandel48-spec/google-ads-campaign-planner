@@ -1650,7 +1650,7 @@ export default function App() {
                         className="w-full accent-pink-500 h-1 bg-[#FAF6F3] rounded-lg cursor-pointer"
                         id="slider-dailybudget"
                       />
-                      <span className="text-[10px] text-stone-450 block">Tope protegido para esta recarga: {formatCurrency(STARTER_META_BUDGET_COP)}. La app no enviará a Meta un presupuesto mayor.</span>
+                      <span className="text-[10px] text-stone-450 block">Presupuesto diario protegido para empezar con recarga pequeña: máximo {formatCurrency(STARTER_META_BUDGET_COP)}.</span>
                     </div>
 
                     {/* Input: Est. Average CPC (Cost per Click) */}
@@ -2252,7 +2252,7 @@ export default function App() {
                         {/* Summary of configurations */}
                         <div className="p-3.5 bg-stone-50 border border-stone-150 rounded-xl space-y-1.5 leading-relaxed text-[11px] text-stone-605">
                           <div><strong>Presupuesto Diario:</strong> {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(metrics.dailyBudget)} COP</div>
-                          <div><strong>Tope de recarga:</strong> {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(STARTER_META_BUDGET_COP)} COP</div>
+                          <div><strong>Máximo diario protegido:</strong> {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(STARTER_META_BUDGET_COP)} COP</div>
                           <div><strong>Audiencia recomendada:</strong> Mujeres de 25-45 años en Colombia.</div>
                           <div><strong>Creativo:</strong> Foto seleccionada de {selectedProduct.name}.</div>
                           <div><strong>Texto de Anuncio:</strong> {adsData?.primaryTexts?.[0]?.substring(0, 80)}...</div>

@@ -19,7 +19,8 @@ import path from "path";
 
 const GRAPH_VERSION = "v21.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
-const DEFAULT_STARTER_SPEND_CAP_COP = 20_000;
+const DEFAULT_STARTER_DAILY_BUDGET_COP = 20_000;
+const MIN_META_CAMPAIGN_SPEND_CAP_COP = 200_000;
 
 export interface MetaCampaignMetric {
   id: string;
@@ -69,12 +70,13 @@ function numberEnv(name: string, fallback: number): number {
   return Number.isFinite(raw) && raw > 0 ? raw : fallback;
 }
 
-function getCampaignSpendCap(): number {
-  return numberEnv("META_CAMPAIGN_SPEND_CAP_COP", DEFAULT_STARTER_SPEND_CAP_COP);
+function getCampaignSpendCap(): number | null {
+  const raw = Number(process.env.META_CAMPAIGN_SPEND_CAP_COP);
+  return Number.isFinite(raw) && raw >= MIN_META_CAMPAIGN_SPEND_CAP_COP ? raw : null;
 }
 
 function getMaxDailyBudget(): number {
-  return numberEnv("META_MAX_DAILY_BUDGET_COP", getCampaignSpendCap());
+  return numberEnv("META_MAX_DAILY_BUDGET_COP", DEFAULT_STARTER_DAILY_BUDGET_COP);
 }
 
 function toMetaMoney(amount: number): string {
@@ -416,7 +418,7 @@ async function createFullCampaign(params: {
   const landingUrl = params.landingUrl || "https://google-ads-campaign-planner.onrender.com";
   const landingHost = new URL(landingUrl).hostname;
   const campaignSpendCap = getCampaignSpendCap();
-  const safeDailyBudget = Math.min(params.dailyBudget, getMaxDailyBudget(), campaignSpendCap);
+  const safeDailyBudget = Math.min(params.dailyBudget, getMaxDailyBudget());
 
   // 1. Upload the image
   const imageHash = await uploadAdImage(params.imagePath);
@@ -427,15 +429,16 @@ async function createFullCampaign(params: {
 
   // 3. Create Campaign
   const objective = hasPixel ? "OUTCOME_SALES" : "OUTCOME_TRAFFIC";
-  const campaignData = await graphPost(`/${accountId}/campaigns`, {
+  const campaignBody: Record<string, string> = {
     name: params.campaignName,
     objective: objective,
     buying_type: "AUCTION",
     status: "PAUSED",
     special_ad_categories: JSON.stringify(["NONE"]),
     is_adset_budget_sharing_enabled: "false",
-    spend_cap: toMetaMoney(campaignSpendCap),
-  });
+  };
+  if (campaignSpendCap) campaignBody.spend_cap = toMetaMoney(campaignSpendCap);
+  const campaignData = await graphPost(`/${accountId}/campaigns`, campaignBody);
   const campaignId = campaignData.id;
 
   // 4. Create Ad Set targeting females, 25-45
