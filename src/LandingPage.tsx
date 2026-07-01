@@ -160,7 +160,9 @@ const formatCOP = (val: number) =>
   }).format(val);
 
 const buildWhatsAppLink = (product: LandingProduct) => {
-  const msg = `Hola \u{1F44B}, quiero pedir ${product.shortName} (${formatCOP(product.price)}) con pago contra entrega. ¿Me ayudas?`;
+  // Sin emojis: algunos paneles (p. ej. Mastershop) usan almacenamiento que no
+  // soporta caracteres de 4 bytes y los muestran como "�". Texto plano = siempre limpio.
+  const msg = `Hola, quiero pedir ${product.shortName} (${formatCOP(product.price)}) con pago contra entrega. ¿Me ayudas?`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
 };
 
