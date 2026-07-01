@@ -27,7 +27,7 @@ import {
  *    Mientras esté vacío (""), el botón "Comprar" usará WhatsApp como respaldo.
  * ============================================================ */
 const WHATSAPP_NUMBER = "573044901787"; // <-- PON TU NÚMERO AQUÍ
-const BRAND_NAME = "Tienda Bienestar";
+const BRAND_NAME = "Tienda del Bienestar Femenino";
 
 interface LandingProduct {
   id: string;
@@ -223,7 +223,10 @@ export default function LandingPage({ productId }: { productId: string }) {
             <span className={`w-8 h-8 rounded-xl bg-gradient-to-tr ${accent.grad} text-white p-1.5 flex items-center justify-center shadow-sm`}>
               {accent.icon}
             </span>
-            <span className="font-extrabold text-rose-950 tracking-tight">{BRAND_NAME}</span>
+            <span className="flex flex-col leading-none">
+              <span className="font-extrabold text-rose-950 tracking-tight text-sm sm:text-base">Tienda del Bienestar</span>
+              <span className="font-bold text-[10px] sm:text-xs uppercase tracking-[0.25em] text-rose-500 mt-0.5">Femenino</span>
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <a

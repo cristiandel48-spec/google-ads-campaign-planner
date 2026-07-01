@@ -201,10 +201,10 @@ function faqReply(text: string): string {
     return "Para consultar el estado de tu pedido, envíame tu *número de pedido* y te comparto la información registrada \u{1F50D}";
   }
   if (q.includes("hola") || q.includes("buenas") || q.includes("buenos") || q.includes("info")) {
-    return "\u{1F44B} ¡Hola! Bienvenida a *Tienda Bienestar*. Puedo ayudarte con:\n\n\u{1F525} *Lemme Burn* – metabolismo y energía\n\u{1F49A} *Urofem Gomas* – salud íntima\n\u{1F49C} *Uro Vaginal* – bienestar íntimo\n\nTodo con envío gratis y pago contra entrega. ¿Qué producto te interesa?";
+    return "\u{1F44B} ¡Hola! Bienvenida a *Tienda del Bienestar Femenino*. Puedo ayudarte con:\n\n\u{1F525} *Lemme Burn* – metabolismo y energía\n\u{1F49A} *Urofem Gomas* – salud íntima\n\u{1F49C} *Uro Vaginal* – bienestar íntimo\n\nTodo con envío gratis y pago contra entrega. ¿Qué producto te interesa?";
   }
 
-  return "\u{1F44B} ¡Hola! Soy el asistente de *Tienda Bienestar*. Puedo ayudarte con productos, precios, envíos, pago contra entrega o el estado de tu pedido. ¿En qué te ayudo?";
+  return "\u{1F44B} ¡Hola! Soy el asistente de *Tienda del Bienestar Femenino*. Puedo ayudarte con productos, precios, envíos, pago contra entrega o el estado de tu pedido. ¿En qué te ayudo?";
 }
 
 async function sendWhatsAppText(to: string | undefined, body: string, reason: string): Promise<{ sent: boolean; skipped?: string; error?: string }> {

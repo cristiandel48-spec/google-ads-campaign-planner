@@ -1150,7 +1150,7 @@ export default function App() {
                               {selectedProduct.name.charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-extrabold text-stone-900 truncate">Tienda Bienestar Fem</p>
+                              <p className="text-xs font-extrabold text-stone-900 truncate">Tienda del Bienestar Femenino</p>
                               <p className="text-[10px] text-stone-500">Patrocinado · 🌐</p>
                             </div>
                             <span className="text-stone-400 font-bold text-sm">···</span>
