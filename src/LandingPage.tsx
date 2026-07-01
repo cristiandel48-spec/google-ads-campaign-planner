@@ -160,7 +160,7 @@ const formatCOP = (val: number) =>
   }).format(val);
 
 const buildWhatsAppLink = (product: LandingProduct) => {
-  const msg = `Hola 👋, quiero pedir ${product.shortName} (${formatCOP(product.price)}) con pago contra entrega. ¿Me ayudas?`;
+  const msg = `Hola \u{1F44B}, quiero pedir ${product.shortName} (${formatCOP(product.price)}) con pago contra entrega. ¿Me ayudas?`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
 };
 
