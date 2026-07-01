@@ -68,7 +68,8 @@ const STARTER_META_BUDGET_COP = 20000;
 
 const PRODUCT_IMAGES: Record<string, { src: string; label: string }[]> = {
   "lemme-burn": [
-    { src: "/images/lemme_burn.jpg", label: "Frasco Lemme Burn" }
+    { src: "/images/lemme_burn_square.png", label: "Cuadrada (Feed 1:1)" },
+    { src: "/images/lemme_burn_story.png", label: "Vertical (Historias 9:16)" }
   ],
   "urofem-gomas": [
     { src: "/images/urofem_gomas.jpg", label: "Gomitas Urofem" }

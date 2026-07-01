@@ -65,7 +65,7 @@ const LANDING_PRODUCTS: Record<string, LandingProduct> = {
       "Energía limpia y prolongada, sin los bajones bruscos de la cafeína.",
       "60 cápsulas premium: suministro completo para todo un mes.",
     ],
-    images: [{ src: "/images/lemme_burn.jpg", alt: "Frasco Lemme Burn 60 cápsulas" }],
+    images: [{ src: "/images/lemme_burn.png", alt: "Lemme Burn 60 cápsulas veganas - Activa tu metabolismo con Actiponin" }],
     mastershopUrl: "", // <-- PON AQUÍ EL LINK DE MASTERSHOP DE LEMME BURN
     accent: "amber",
     faqs: [
