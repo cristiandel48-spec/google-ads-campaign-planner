@@ -183,10 +183,11 @@ export default function LandingPage({ productId }: { productId: string }) {
   const accent =
     product.accent === "amber"
       ? {
-          grad: "from-amber-500 to-orange-500",
-          gradHover: "hover:from-amber-600 hover:to-orange-600",
-          soft: "bg-amber-50 text-amber-700 border-amber-200",
-          ring: "text-amber-500",
+          // Paleta femenina rosada, conservando el ícono de llama (Burn).
+          grad: "from-pink-500 to-rose-500",
+          gradHover: "hover:from-pink-600 hover:to-rose-600",
+          soft: "bg-pink-50 text-pink-700 border-pink-200",
+          ring: "text-rose-500",
           icon: <Flame className="w-full h-full" />,
         }
       : {
@@ -212,7 +213,7 @@ export default function LandingPage({ productId }: { productId: string }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FFF7F4] via-white to-[#FFFBF7] text-[#3f3330] font-sans">
       {/* Announcement bar */}
-      <div className={`w-full bg-gradient-to-r ${accent.grad} text-white text-center text-[12px] md:text-sm font-bold py-2 px-4 flex items-center justify-center gap-2`}>
+      <div className="w-full bg-[#F3E8DD] text-[#BE185D] text-center text-[12px] md:text-sm font-bold py-2 px-4 flex items-center justify-center gap-2">
         <Truck className="w-4 h-4" /> ENVÍO GRATIS a toda Colombia · 💵 Pagas al recibir (Contra Entrega)
       </div>
 
@@ -225,7 +226,7 @@ export default function LandingPage({ productId }: { productId: string }) {
             </span>
             <span className="flex flex-col leading-none">
               <span className="font-extrabold text-rose-950 tracking-tight text-sm sm:text-base">Tienda del Bienestar</span>
-              <span className="font-bold text-[10px] sm:text-xs uppercase tracking-[0.25em] text-rose-500 mt-0.5">Femenino</span>
+              <span className="font-bold text-[10px] sm:text-xs uppercase tracking-[0.25em] text-pink-700 mt-0.5">Femenino</span>
             </span>
           </div>
           <div className="flex items-center gap-2">
