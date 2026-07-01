@@ -168,20 +168,43 @@ function messageForOrder(event: OrderEvent): string | null {
 }
 
 function faqReply(text: string): string {
-  const q = text.toLowerCase();
-  if (q.includes("envio") || q.includes("envío") || q.includes("llega") || q.includes("tiempo")) {
-    return "Los envios se confirman despues del pedido y te avisamos cada cambio de estado por WhatsApp.";
+  // Normalizamos (minusculas y sin tildes) SOLO para detectar palabras clave.
+  const q = text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+  // --- Respuestas especificas por producto (precio + beneficio + como pedir) ---
+  if (q.includes("lemme") || q.includes("burn")) {
+    return "\u{1F525} *Lemme Burn* (60 cápsulas veganas) cuesta *$119.900* con envío gratis y pago contra entrega en toda Colombia.\n\nActiva tu metabolismo, te da energía y ayuda a controlar los antojos de dulce. Para pedirlo, envíame tu *nombre, ciudad y dirección* y lo despachamos hoy ✅";
   }
-  if (q.includes("devol") || q.includes("cambio") || q.includes("garantia") || q.includes("garantía")) {
-    return "Podemos ayudarte con cambios o devoluciones segun el estado del pedido. Enviame tu numero de pedido para revisarlo.";
+  if (q.includes("urofem")) {
+    return "\u{1F49A} *Urofem Gomas* (60 gomitas probióticas) cuesta *$99.900* con envío gratis y pago contra entrega.\n\nCuida tu salud íntima y urinaria de forma deliciosa. Para pedir, envíame tu *nombre, ciudad y dirección* ✅";
   }
-  if (q.includes("precio") || q.includes("pago") || q.includes("contra entrega")) {
-    return "Tenemos checkout simplificado y, si aplica para tu ciudad, pago contra entrega. Te confirmo disponibilidad con tu pedido.";
+  if (q.includes("vaginal")) {
+    return "\u{1F49C} *Uro Vaginal* (probióticos) cuesta *$94.900* con envío gratis y pago contra entrega.\n\nApoya tu flora y bienestar íntimo diario. Para pedir, envíame tu *nombre, ciudad y dirección* ✅";
   }
-  if (q.includes("estado") || q.includes("pedido") || q.includes("guia") || q.includes("guía")) {
-    return "Para consultar el estado, enviame tu numero de pedido y te comparto la informacion registrada.";
+
+  // --- Intencion de compra ---
+  if (q.includes("pedir") || q.includes("comprar") || q.includes("quiero") || q.includes("ordenar")) {
+    return "\u{1F60A} ¡Con gusto te ayudo con tu pedido! Envíame por favor:\n\n1) Producto que quieres\n2) Tu nombre completo\n3) Ciudad y dirección\n\nEl pago es *contra entrega* (pagas al recibir) y el envío es *gratis* a toda Colombia \u{1F69A}";
   }
-  return "Hola, soy el asistente automatico. Puedo ayudarte con productos, envios, pagos, devoluciones o estado de pedidos.";
+
+  // --- Preguntas frecuentes ---
+  if (q.includes("envio") || q.includes("llega") || q.includes("tiempo") || q.includes("demora") || q.includes("cuando")) {
+    return "\u{1F69A} El envío es *gratis* a toda Colombia y normalmente llega en *1 a 3 días hábiles* según tu ciudad. Te avisamos cada cambio de estado por aquí.";
+  }
+  if (q.includes("devol") || q.includes("cambio") || q.includes("garantia")) {
+    return "Con gusto te ayudo con cambios o devoluciones según el estado del pedido. Envíame tu *número de pedido* para revisarlo \u{1F4DD}";
+  }
+  if (q.includes("precio") || q.includes("cuesta") || q.includes("valor") || q.includes("pago") || q.includes("contra entrega") || q.includes("efectivo")) {
+    return "\u{1F4B0} Puedes pagar *contra entrega* (en efectivo al recibir) y el envío es *gratis* a toda Colombia. Dime qué producto te interesa y te confirmo el precio y la disponibilidad en tu ciudad.";
+  }
+  if (q.includes("estado") || q.includes("pedido") || q.includes("guia") || q.includes("rastre") || q.includes("seguim")) {
+    return "Para consultar el estado de tu pedido, envíame tu *número de pedido* y te comparto la información registrada \u{1F50D}";
+  }
+  if (q.includes("hola") || q.includes("buenas") || q.includes("buenos") || q.includes("info")) {
+    return "\u{1F44B} ¡Hola! Bienvenida a *Tienda Bienestar*. Puedo ayudarte con:\n\n\u{1F525} *Lemme Burn* – metabolismo y energía\n\u{1F49A} *Urofem Gomas* – salud íntima\n\u{1F49C} *Uro Vaginal* – bienestar íntimo\n\nTodo con envío gratis y pago contra entrega. ¿Qué producto te interesa?";
+  }
+
+  return "\u{1F44B} ¡Hola! Soy el asistente de *Tienda Bienestar*. Puedo ayudarte con productos, precios, envíos, pago contra entrega o el estado de tu pedido. ¿En qué te ayudo?";
 }
 
 async function sendWhatsAppText(to: string | undefined, body: string, reason: string): Promise<{ sent: boolean; skipped?: string; error?: string }> {
